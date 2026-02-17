@@ -1,0 +1,1050 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mein Trainingsplan</title>
+    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Work+Sans:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        :root {
+            --primary: #ff4757;
+            --primary-dark: #d63447;
+            --accent: #ffa502;
+            --bg: #0a0e27;
+            --bg-light: #1e2139;
+            --text: #f1f2f6;
+            --text-dim: #a4b0be;
+            --success: #26de81;
+            --edit: #5352ed;
+        }
+
+        body {
+            font-family: 'Work Sans', sans-serif;
+            background: linear-gradient(135deg, var(--bg) 0%, #1a1d3d 100%);
+            color: var(--text);
+            min-height: 100vh;
+            padding: 20px;
+            position: relative;
+            overflow-x: hidden;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            top: -50%; left: -50%;
+            width: 200%; height: 200%;
+            background:
+                radial-gradient(circle at 20% 30%, rgba(255,71,87,0.1) 0%, transparent 40%),
+                radial-gradient(circle at 80% 70%, rgba(255,165,2,0.08) 0%, transparent 40%);
+            animation: rotate 30s linear infinite;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        @keyframes rotate { 100% { transform: rotate(360deg); } }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            position: relative;
+            z-index: 1;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 50px;
+            animation: fadeInDown 0.8s ease;
+        }
+
+        h1 {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 4rem;
+            letter-spacing: 4px;
+            background: linear-gradient(135deg, var(--primary), var(--accent));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 10px;
+        }
+
+        .subtitle {
+            font-size: 0.9rem;
+            color: var(--text-dim);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            font-weight: 300;
+        }
+
+        .page { display: none; animation: fadeIn 0.5s ease; }
+        .page.active { display: block; }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes fadeInDown {
+            from { opacity: 0; transform: translateY(-30px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+
+        /* ── Menu ── */
+        .menu-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .day-button {
+            background: linear-gradient(135deg, var(--bg-light) 0%, rgba(30,33,57,0.6) 100%);
+            border: 2px solid rgba(255,71,87,0.3);
+            padding: 30px;
+            border-radius: 16px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .day-button::before {
+            content: '';
+            position: absolute;
+            top: 0; left: -100%;
+            width: 100%; height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,71,87,0.2), transparent);
+            transition: left 0.5s ease;
+        }
+
+        .day-button:hover::before { left: 100%; }
+        .day-button:hover {
+            transform: translateY(-5px);
+            border-color: var(--primary);
+            box-shadow: 0 10px 40px rgba(255,71,87,0.3);
+        }
+
+        .day-name {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 2rem;
+            color: var(--primary);
+            margin-bottom: 8px;
+            letter-spacing: 2px;
+        }
+
+        .day-focus  { font-size: 0.85rem; color: var(--text-dim); font-weight: 300; }
+        .day-duration { font-size: 0.75rem; color: var(--accent); margin-top: 8px; font-weight: 600; }
+
+        /* ── Training header ── */
+        .training-header {
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            padding: 30px;
+            border-radius: 16px;
+            margin-bottom: 30px;
+            box-shadow: 0 10px 40px rgba(255,71,87,0.3);
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        .training-header h2 {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 2.5rem;
+            letter-spacing: 3px;
+            margin-bottom: 8px;
+        }
+
+        .training-header p { font-size: 0.95rem; opacity: 0.9; font-weight: 300; }
+
+        /* Edit toggle button */
+        .btn-edit-mode {
+            background: rgba(255,255,255,0.15);
+            border: 2px solid rgba(255,255,255,0.4);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 1rem;
+            letter-spacing: 1.5px;
+            transition: all 0.3s ease;
+            white-space: nowrap;
+            align-self: flex-start;
+        }
+
+        .btn-edit-mode:hover { background: rgba(255,255,255,0.25); border-color: white; }
+        .btn-edit-mode.active {
+            background: #5352ed;
+            border-color: #5352ed;
+            box-shadow: 0 4px 20px rgba(83,82,237,0.5);
+        }
+
+        /* ── Exercise sections ── */
+        .exercise-section {
+            background: rgba(30,33,57,0.6);
+            border: 1px solid rgba(255,71,87,0.2);
+            border-radius: 12px;
+            padding: 25px;
+            margin-bottom: 20px;
+            backdrop-filter: blur(10px);
+        }
+
+        .section-title {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 1.4rem;
+            color: var(--accent);
+            margin-bottom: 20px;
+            letter-spacing: 2px;
+            border-bottom: 2px solid rgba(255,165,2,0.3);
+            padding-bottom: 10px;
+        }
+
+        .exercise-item {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            padding: 15px;
+            background: rgba(10,14,39,0.5);
+            border-radius: 8px;
+            margin-bottom: 12px;
+            transition: all 0.3s ease;
+            border-left: 3px solid transparent;
+        }
+
+        .exercise-item:hover { background: rgba(10,14,39,0.8); border-left-color: var(--primary); }
+        .exercise-item.completed { opacity: 0.55; }
+
+        /* Checkbox */
+        .checkbox-wrapper { position: relative; flex-shrink: 0; }
+
+        .checkbox-wrapper input[type="checkbox"] {
+            appearance: none;
+            width: 28px; height: 28px;
+            border: 2px solid var(--primary);
+            border-radius: 6px;
+            cursor: pointer;
+            position: relative;
+            transition: all 0.3s ease;
+            background: rgba(255,71,87,0.1);
+        }
+
+        .checkbox-wrapper input[type="checkbox"]:checked {
+            background: var(--primary);
+            border-color: var(--primary);
+        }
+
+        .checkbox-wrapper input[type="checkbox"]:checked::after {
+            content: '✓';
+            position: absolute;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            color: white;
+            font-weight: bold;
+            font-size: 18px;
+        }
+
+        /* Exercise content */
+        .exercise-content { flex: 1; min-width: 0; }
+
+        /* Editable fields */
+        .editable-field {
+            background: transparent;
+            border: none;
+            color: inherit;
+            font-family: 'Work Sans', sans-serif;
+            width: 100%;
+            padding: 2px 0;
+            transition: all 0.3s ease;
+            cursor: default;
+            pointer-events: none;
+        }
+
+        .editable-field.name-field {
+            font-weight: 600;
+            font-size: 1rem;
+            display: block;
+            margin-bottom: 4px;
+        }
+
+        .editable-field.sets-field {
+            font-size: 0.85rem;
+            color: var(--text-dim);
+            display: block;
+        }
+
+        /* Edit mode – make fields interactive */
+        body.edit-mode .editable-field {
+            background: rgba(83,82,237,0.15);
+            border: 1px solid rgba(83,82,237,0.5);
+            border-radius: 5px;
+            padding: 4px 8px;
+            margin-bottom: 4px;
+            outline: none;
+            cursor: text;
+            pointer-events: all;
+        }
+
+        body.edit-mode .editable-field:focus {
+            background: rgba(83,82,237,0.28);
+            border-color: #5352ed;
+            box-shadow: 0 0 0 3px rgba(83,82,237,0.2);
+        }
+
+        body.edit-mode .exercise-item { border-left-color: rgba(83,82,237,0.4); }
+        body.edit-mode .checkbox-wrapper { display: none; }
+
+        /* Edit mode info banner */
+        .edit-banner {
+            display: none;
+            background: rgba(83,82,237,0.18);
+            border: 1px solid rgba(83,82,237,0.4);
+            border-radius: 10px;
+            padding: 12px 18px;
+            margin-bottom: 20px;
+            font-size: 0.9rem;
+            color: #a29bfe;
+            text-align: center;
+        }
+
+        body.edit-mode .edit-banner { display: block; }
+
+        /* Weight input */
+        .weight-input-wrapper {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-shrink: 0;
+        }
+
+        .weight-input-wrapper label { font-size: 0.8rem; color: var(--text-dim); white-space: nowrap; }
+
+        .weight-input-wrapper input[type="number"] {
+            width: 80px;
+            padding: 8px 12px;
+            background: rgba(10,14,39,0.8);
+            border: 1px solid rgba(255,71,87,0.3);
+            border-radius: 6px;
+            color: var(--text);
+            font-size: 0.9rem;
+            font-family: 'Work Sans', sans-serif;
+            transition: all 0.3s ease;
+        }
+
+        .weight-input-wrapper input[type="number"]:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(255,71,87,0.2);
+        }
+
+        /* Hint box */
+        .hint-box {
+            background: rgba(255,165,2,0.1);
+            border: 1px solid rgba(255,165,2,0.3);
+            border-radius: 8px;
+            padding: 15px;
+            margin-top: 20px;
+            font-size: 0.9rem;
+            color: var(--text-dim);
+        }
+
+        .hint-box strong { color: var(--accent); }
+
+        /* Progress bar */
+        .progress-bar {
+            height: 6px;
+            background: rgba(255,71,87,0.2);
+            border-radius: 10px;
+            margin-top: 20px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--primary), var(--accent));
+            border-radius: 10px;
+            transition: width 0.3s ease;
+            box-shadow: 0 0 10px rgba(255,71,87,0.5);
+        }
+
+        /* Action buttons */
+        .action-buttons { display: flex; gap: 15px; margin-top: 30px; flex-wrap: wrap; }
+
+        .btn {
+            flex: 1;
+            min-width: 140px;
+            padding: 18px 30px;
+            border: none;
+            border-radius: 12px;
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 1.3rem;
+            letter-spacing: 2px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn::before {
+            content: '';
+            position: absolute;
+            top: 50%; left: 50%;
+            width: 0; height: 0;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.2);
+            transform: translate(-50%, -50%);
+            transition: width 0.5s, height 0.5s;
+        }
+
+        .btn:hover::before { width: 300px; height: 300px; }
+        .btn span { position: relative; z-index: 1; }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--success), #1dd1a1);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 30px rgba(38,222,129,0.4);
+        }
+
+        .btn-secondary {
+            background: linear-gradient(135deg, var(--bg-light), #2f3542);
+            color: var(--text);
+            border: 2px solid rgba(255,71,87,0.3);
+        }
+
+        .btn-secondary:hover {
+            transform: translateY(-3px);
+            border-color: var(--primary);
+            box-shadow: 0 10px 30px rgba(255,71,87,0.3);
+        }
+
+        /* Responsive */
+        @media (max-width: 640px) {
+            h1 { font-size: 2.5rem; }
+            .menu-grid { grid-template-columns: 1fr; }
+            .exercise-item { flex-wrap: wrap; }
+            .weight-input-wrapper { width: 100%; }
+            .action-buttons { flex-direction: column; }
+            .training-header { flex-direction: column; }
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+
+    <header>
+        <h1>TRAININGSPLAN</h1>
+        <p class="subtitle">Dein Weg zum Erfolg</p>
+    </header>
+
+    <!-- ═══════════════ MENU ═══════════════ -->
+    <div id="menu-page" class="page active">
+        <div class="menu-grid">
+            <div class="day-button" onclick="showDay('monday')">
+                <div class="day-name">MONTAG</div>
+                <div class="day-focus">Rücken Breite + Schulter</div>
+                <div class="day-duration">50–60 min</div>
+            </div>
+            <div class="day-button" onclick="showDay('tuesday')">
+                <div class="day-name">DIENSTAG</div>
+                <div class="day-focus">Brust + Trizeps</div>
+                <div class="day-duration">50–60 min</div>
+            </div>
+            <div class="day-button" onclick="showDay('thursday')">
+                <div class="day-name">DONNERSTAG</div>
+                <div class="day-focus">Rücken & Tiefe + Bizeps</div>
+                <div class="day-duration">50–60 min</div>
+            </div>
+            <div class="day-button" onclick="showDay('friday')">
+                <div class="day-name">FREITAG</div>
+                <div class="day-focus">Schulter + Core</div>
+                <div class="day-duration">50–60 min</div>
+            </div>
+            <div class="day-button" onclick="showDay('sunday')">
+                <div class="day-name">SONNTAG</div>
+                <div class="day-focus">Beine</div>
+                <div class="day-duration">Qualität vor Quantität</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══════════════ MONDAY ═══════════════ -->
+    <div id="monday-page" class="page">
+        <div class="training-header">
+            <div>
+                <h2>MONTAG</h2>
+                <p>Rücken Breite + seitliche Schulter • 50–60 min</p>
+            </div>
+            <button class="btn-edit-mode" id="monday-edit-btn" onclick="toggleEdit('monday')">✏️ BEARBEITEN</button>
+        </div>
+        <div class="edit-banner">✏️ Bearbeitungsmodus – Texte direkt anklicken und ändern. Wird automatisch gespeichert.</div>
+
+        <div class="exercise-section">
+            <div class="section-title">Lat-Fokus (mechanische Spannung)</div>
+            <div class="exercise-item">
+                <div class="checkbox-wrapper"><input type="checkbox" id="mon-ex1" onchange="updateProgress('monday')"></div>
+                <div class="exercise-content">
+                    <input class="editable-field name-field" id="mon-name1" value="Weiter Latzug zur Brust" oninput="saveText('monday')">
+                    <input class="editable-field sets-field" id="mon-sets1" value="4× 6–10" oninput="saveText('monday')">
+                </div>
+                <div class="weight-input-wrapper">
+                    <label>kg</label>
+                    <input type="number" placeholder="—" id="mon-weight1" oninput="saveWeights('monday')">
+                </div>
+            </div>
+            <div class="exercise-item">
+                <div class="checkbox-wrapper"><input type="checkbox" id="mon-ex2" onchange="updateProgress('monday')"></div>
+                <div class="exercise-content">
+                    <input class="editable-field name-field" id="mon-name2" value="Neutraler Klimmzug oder Assist" oninput="saveText('monday')">
+                    <input class="editable-field sets-field" id="mon-sets2" value="3× 6–10" oninput="saveText('monday')">
+                </div>
+                <div class="weight-input-wrapper">
+                    <label>kg</label>
+                    <input type="number" placeholder="—" id="mon-weight2" oninput="saveWeights('monday')">
+                </div>
+            </div>
+            <div class="exercise-item">
+                <div class="checkbox-wrapper"><input type="checkbox" id="mon-ex3" onchange="updateProgress('monday')"></div>
+                <div class="exercise-content">
+                    <input class="editable-field name-field" id="mon-name3" value="Einarmiger Kabel-Latzug (starker Stretch)" oninput="saveText('monday')">
+                    <input class="editable-field sets-field" id="mon-sets3" value="3× 10–12" oninput="saveText('monday')">
+                </div>
+                <div class="weight-input-wrapper">
+                    <label>kg</label>
+                    <input type="number" placeholder="—" id="mon-weight3" oninput="saveWeights('monday')">
+                </div>
+            </div>
+        </div>
+
+        <div class="exercise-section">
+            <div class="section-title">Schulterkappe</div>
+            <div class="exercise-item">
+                <div class="checkbox-wrapper"><input type="checkbox" id="mon-ex4" onchange="updateProgress('monday')"></div>
+                <div class="exercise-content">
+                    <input class="editable-field name-field" id="mon-name4" value="Seitheben Maschine oder Kabel" oninput="saveText('monday')">
+                    <input class="editable-field sets-field" id="mon-sets4" value="4× 12–15" oninput="saveText('monday')">
+                </div>
+                <div class="weight-input-wrapper">
+                    <label>kg</label>
+                    <input type="number" placeholder="—" id="mon-weight4" oninput="saveWeights('monday')">
+                </div>
+            </div>
+            <div class="exercise-item">
+                <div class="checkbox-wrapper"><input type="checkbox" id="mon-ex5" onchange="updateProgress('monday')"></div>
+                <div class="exercise-content">
+                    <input class="editable-field name-field" id="mon-name5" value="Lean-Away Seitheben" oninput="saveText('monday')">
+                    <input class="editable-field sets-field" id="mon-sets5" value="2× 15–20" oninput="saveText('monday')">
+                </div>
+                <div class="weight-input-wrapper">
+                    <label>kg</label>
+                    <input type="number" placeholder="—" id="mon-weight5" oninput="saveWeights('monday')">
+                </div>
+            </div>
+        </div>
+
+        <div class="hint-box"><strong>Hinweis:</strong> Pausen kurz (60–75 Sek.), sauberer Stretch</div>
+        <div class="progress-bar"><div class="progress-fill" id="monday-progress" style="width:0%"></div></div>
+        <div class="action-buttons">
+            <button class="btn btn-primary" onclick="finishTraining('monday')"><span>TRAINING FERTIG</span></button>
+            <button class="btn btn-secondary" onclick="showMenu()"><span>ZURÜCK</span></button>
+        </div>
+    </div>
+
+    <!-- ═══════════════ TUESDAY ═══════════════ -->
+    <div id="tuesday-page" class="page">
+        <div class="training-header">
+            <div>
+                <h2>DIENSTAG</h2>
+                <p>Brust + Trizeps • 50–60 min</p>
+            </div>
+            <button class="btn-edit-mode" id="tuesday-edit-btn" onclick="toggleEdit('tuesday')">✏️ BEARBEITEN</button>
+        </div>
+        <div class="edit-banner">✏️ Bearbeitungsmodus – Texte direkt anklicken und ändern. Wird automatisch gespeichert.</div>
+
+        <div class="exercise-section">
+            <div class="section-title">Brust (breitenfördernd, gelenkschonend)</div>
+            <div class="exercise-item">
+                <div class="checkbox-wrapper"><input type="checkbox" id="tue-ex1" onchange="updateProgress('tuesday')"></div>
+                <div class="exercise-content">
+                    <input class="editable-field name-field" id="tue-name1" value="Brustpresse Maschine" oninput="saveText('tuesday')">
+                    <input class="editable-field sets-field" id="tue-sets1" value="4× 6–10" oninput="saveText('tuesday')">
+                </div>
+                <div class="weight-input-wrapper">
+                    <label>kg</label>
+                    <input type="number" placeholder="—" id="tue-weight1" oninput="saveWeights('tuesday')">
+                </div>
+            </div>
+            <div class="exercise-item">
+                <div class="checkbox-wrapper"><input type="checkbox" id="tue-ex2" onchange="updateProgress('tuesday')"></div>
+                <div class="exercise-content">
+                    <input class="editable-field name-field" id="tue-name2" value="Butterfly Maschine" oninput="saveText('tuesday')">
+                    <input class="editable-field sets-field" id="tue-sets2" value="4× 10–15" oninput="saveText('tuesday')">
+                </div>
+                <div class="weight-input-wrapper">
+                    <label>kg</label>
+                    <input type="number" placeholder="—" id="tue-weight2" oninput="saveWeights('tuesday')">
+                </div>
+            </div>
+            <div class="exercise-item">
+                <div class="checkbox-wrapper"><input type="checkbox" id="tue-ex3" onchange="updateProgress('tuesday')"></div>
+                <div class="exercise-content">
+                    <input class="editable-field name-field" id="tue-name3" value="Schrägbank Kabel Fly" oninput="saveText('tuesday')">
+                    <input class="editable-field sets-field" id="tue-sets3" value="3× 12–15" oninput="saveText('tuesday')">
+                </div>
+                <div class="weight-input-wrapper">
+                    <label>kg</label>
+                    <input type="number" placeholder="—" id="tue-weight3" oninput="saveWeights('tuesday')">
+                </div>
+            </div>
+        </div>
+
+        <div class="exercise-section">
+            <div class="section-title">Trizeps</div>
+            <div class="exercise-item">
+                <div class="checkbox-wrapper"><input type="checkbox" id="tue-ex4" onchange="updateProgress('tuesday')"></div>
+                <div class="exercise-content">
+                    <input class="editable-field name-field" id="tue-name4" value="Kabel Pushdowns" oninput="saveText('tuesday')">
+                    <input class="editable-field sets-field" id="tue-sets4" value="3× 10–12" oninput="saveText('tuesday')">
+                </div>
+                <div class="weight-input-wrapper">
+                    <label>kg</label>
+                    <input type="number" placeholder="—" id="tue-weight4" oninput="saveWeights('tuesday')">
+                </div>
+            </div>
+            <div class="exercise-item">
+                <div class="checkbox-wrapper"><input type="checkbox" id="tue-ex5" onchange="updateProgress('tuesday')"></div>
+                <div class="exercise-content">
+                    <input class="editable-field name-field" id="tue-name5" value="Überkopf Kabelstrecken" oninput="saveText('tuesday')">
+                    <input class="editable-field sets-field" id="tue-sets5" value="2× 12–15" oninput="saveText('tuesday')">
+                </div>
+                <div class="weight-input-wrapper">
+                    <label>kg</label>
+                    <input type="number" placeholder="—" id="tue-weight5" oninput="saveWeights('tuesday')">
+                </div>
+            </div>
+        </div>
+
+        <div class="progress-bar"><div class="progress-fill" id="tuesday-progress" style="width:0%"></div></div>
+        <div class="action-buttons">
+            <button class="btn btn-primary" onclick="finishTraining('tuesday')"><span>TRAINING FERTIG</span></button>
+            <button class="btn btn-secondary" onclick="showMenu()"><span>ZURÜCK</span></button>
+        </div>
+    </div>
+
+    <!-- ═══════════════ THURSDAY ═══════════════ -->
+    <div id="thursday-page" class="page">
+        <div class="training-header">
+            <div>
+                <h2>DONNERSTAG</h2>
+                <p>Rücken Breite & Tiefe + Bizeps • 50–60 min</p>
+            </div>
+            <button class="btn-edit-mode" id="thursday-edit-btn" onclick="toggleEdit('thursday')">✏️ BEARBEITEN</button>
+        </div>
+        <div class="edit-banner">✏️ Bearbeitungsmodus – Texte direkt anklicken und ändern. Wird automatisch gespeichert.</div>
+
+        <div class="exercise-section">
+            <div class="section-title">Lat + obere Rückentiefe</div>
+            <div class="exercise-item">
+                <div class="checkbox-wrapper"><input type="checkbox" id="thu-ex1" onchange="updateProgress('thursday')"></div>
+                <div class="exercise-content">
+                    <input class="editable-field name-field" id="thu-name1" value="Enger Latzug (Ellbogen zur Hüfte)" oninput="saveText('thursday')">
+                    <input class="editable-field sets-field" id="thu-sets1" value="4× 8–12" oninput="saveText('thursday')">
+                </div>
+                <div class="weight-input-wrapper">
+                    <label>kg</label>
+                    <input type="number" placeholder="—" id="thu-weight1" oninput="saveWeights('thursday')">
+                </div>
+            </div>
+            <div class="exercise-item">
+                <div class="checkbox-wrapper"><input type="checkbox" id="thu-ex2" onchange="updateProgress('thursday')"></div>
+                <div class="exercise-content">
+                    <input class="editable-field name-field" id="thu-name2" value="Brustgestütztes Rudern Maschine" oninput="saveText('thursday')">
+                    <input class="editable-field sets-field" id="thu-sets2" value="3× 8–12" oninput="saveText('thursday')">
+                </div>
+                <div class="weight-input-wrapper">
+                    <label>kg</label>
+                    <input type="number" placeholder="—" id="thu-weight2" oninput="saveWeights('thursday')">
+                </div>
+            </div>
+            <div class="exercise-item">
+                <div class="checkbox-wrapper"><input type="checkbox" id="thu-ex3" onchange="updateProgress('thursday')"></div>
+                <div class="exercise-content">
+                    <input class="editable-field name-field" id="thu-name3" value="Straight-Arm Pulldown" oninput="saveText('thursday')">
+                    <input class="editable-field sets-field" id="thu-sets3" value="3× 12–15" oninput="saveText('thursday')">
+                </div>
+                <div class="weight-input-wrapper">
+                    <label>kg</label>
+                    <input type="number" placeholder="—" id="thu-weight3" oninput="saveWeights('thursday')">
+                </div>
+            </div>
+        </div>
+
+        <div class="exercise-section">
+            <div class="section-title">Bizeps</div>
+            <div class="exercise-item">
+                <div class="checkbox-wrapper"><input type="checkbox" id="thu-ex4" onchange="updateProgress('thursday')"></div>
+                <div class="exercise-content">
+                    <input class="editable-field name-field" id="thu-name4" value="Schrägbank Kurzhantelcurls" oninput="saveText('thursday')">
+                    <input class="editable-field sets-field" id="thu-sets4" value="3× 8–12" oninput="saveText('thursday')">
+                </div>
+                <div class="weight-input-wrapper">
+                    <label>kg</label>
+                    <input type="number" placeholder="—" id="thu-weight4" oninput="saveWeights('thursday')">
+                </div>
+            </div>
+            <div class="exercise-item">
+                <div class="checkbox-wrapper"><input type="checkbox" id="thu-ex5" onchange="updateProgress('thursday')"></div>
+                <div class="exercise-content">
+                    <input class="editable-field name-field" id="thu-name5" value="Kabelcurls (konstant)" oninput="saveText('thursday')">
+                    <input class="editable-field sets-field" id="thu-sets5" value="2× 12–15" oninput="saveText('thursday')">
+                </div>
+                <div class="weight-input-wrapper">
+                    <label>kg</label>
+                    <input type="number" placeholder="—" id="thu-weight5" oninput="saveWeights('thursday')">
+                </div>
+            </div>
+        </div>
+
+        <div class="progress-bar"><div class="progress-fill" id="thursday-progress" style="width:0%"></div></div>
+        <div class="action-buttons">
+            <button class="btn btn-primary" onclick="finishTraining('thursday')"><span>TRAINING FERTIG</span></button>
+            <button class="btn btn-secondary" onclick="showMenu()"><span>ZURÜCK</span></button>
+        </div>
+    </div>
+
+    <!-- ═══════════════ FRIDAY ═══════════════ -->
+    <div id="friday-page" class="page">
+        <div class="training-header">
+            <div>
+                <h2>FREITAG</h2>
+                <p>Schulter Breite + hintere Schulter + Core • 50–60 min</p>
+            </div>
+            <button class="btn-edit-mode" id="friday-edit-btn" onclick="toggleEdit('friday')">✏️ BEARBEITEN</button>
+        </div>
+        <div class="edit-banner">✏️ Bearbeitungsmodus – Texte direkt anklicken und ändern. Wird automatisch gespeichert.</div>
+
+        <div class="exercise-section">
+            <div class="section-title">Seitliche Schulter (Priorität!)</div>
+            <div class="exercise-item">
+                <div class="checkbox-wrapper"><input type="checkbox" id="fri-ex1" onchange="updateProgress('friday')"></div>
+                <div class="exercise-content">
+                    <input class="editable-field name-field" id="fri-name1" value="Seitheben Maschine" oninput="saveText('friday')">
+                    <input class="editable-field sets-field" id="fri-sets1" value="5× 12–15" oninput="saveText('friday')">
+                </div>
+                <div class="weight-input-wrapper">
+                    <label>kg</label>
+                    <input type="number" placeholder="—" id="fri-weight1" oninput="saveWeights('friday')">
+                </div>
+            </div>
+            <div class="exercise-item">
+                <div class="checkbox-wrapper"><input type="checkbox" id="fri-ex2" onchange="updateProgress('friday')"></div>
+                <div class="exercise-content">
+                    <input class="editable-field name-field" id="fri-name2" value="Kabel Seitheben einarmig" oninput="saveText('friday')">
+                    <input class="editable-field sets-field" id="fri-sets2" value="3× 15–20" oninput="saveText('friday')">
+                </div>
+                <div class="weight-input-wrapper">
+                    <label>kg</label>
+                    <input type="number" placeholder="—" id="fri-weight2" oninput="saveWeights('friday')">
+                </div>
+            </div>
+        </div>
+
+        <div class="exercise-section">
+            <div class="section-title">Hintere Schulter / Optische Breite</div>
+            <div class="exercise-item">
+                <div class="checkbox-wrapper"><input type="checkbox" id="fri-ex3" onchange="updateProgress('friday')"></div>
+                <div class="exercise-content">
+                    <input class="editable-field name-field" id="fri-name3" value="Reverse Pec Deck" oninput="saveText('friday')">
+                    <input class="editable-field sets-field" id="fri-sets3" value="4× 12–15" oninput="saveText('friday')">
+                </div>
+                <div class="weight-input-wrapper">
+                    <label>kg</label>
+                    <input type="number" placeholder="—" id="fri-weight3" oninput="saveWeights('friday')">
+                </div>
+            </div>
+            <div class="exercise-item">
+                <div class="checkbox-wrapper"><input type="checkbox" id="fri-ex4" onchange="updateProgress('friday')"></div>
+                <div class="exercise-content">
+                    <input class="editable-field name-field" id="fri-name4" value="Face Pulls" oninput="saveText('friday')">
+                    <input class="editable-field sets-field" id="fri-sets4" value="2× 15–20" oninput="saveText('friday')">
+                </div>
+                <div class="weight-input-wrapper">
+                    <label>kg</label>
+                    <input type="number" placeholder="—" id="fri-weight4" oninput="saveWeights('friday')">
+                </div>
+            </div>
+        </div>
+
+        <div class="exercise-section">
+            <div class="section-title">Core (Taille schlank halten!)</div>
+            <div class="exercise-item">
+                <div class="checkbox-wrapper"><input type="checkbox" id="fri-ex5" onchange="updateProgress('friday')"></div>
+                <div class="exercise-content">
+                    <input class="editable-field name-field" id="fri-name5" value="Hanging Leg Raises" oninput="saveText('friday')">
+                    <input class="editable-field sets-field" id="fri-sets5" value="3× 10–15" oninput="saveText('friday')">
+                </div>
+                <div class="weight-input-wrapper">
+                    <label>kg</label>
+                    <input type="number" placeholder="—" id="fri-weight5" oninput="saveWeights('friday')">
+                </div>
+            </div>
+            <div class="exercise-item">
+                <div class="checkbox-wrapper"><input type="checkbox" id="fri-ex6" onchange="updateProgress('friday')"></div>
+                <div class="exercise-content">
+                    <input class="editable-field name-field" id="fri-name6" value="Plank oder Cable Crunch" oninput="saveText('friday')">
+                    <input class="editable-field sets-field" id="fri-sets6" value="2× 30–45 s" oninput="saveText('friday')">
+                </div>
+                <div class="weight-input-wrapper">
+                    <label>kg</label>
+                    <input type="number" placeholder="—" id="fri-weight6" oninput="saveWeights('friday')">
+                </div>
+            </div>
+        </div>
+
+        <div class="progress-bar"><div class="progress-fill" id="friday-progress" style="width:0%"></div></div>
+        <div class="action-buttons">
+            <button class="btn btn-primary" onclick="finishTraining('friday')"><span>TRAINING FERTIG</span></button>
+            <button class="btn btn-secondary" onclick="showMenu()"><span>ZURÜCK</span></button>
+        </div>
+    </div>
+
+    <!-- ═══════════════ SUNDAY ═══════════════ -->
+    <div id="sunday-page" class="page">
+        <div class="training-header">
+            <div>
+                <h2>SONNTAG</h2>
+                <p>Beine • Qualität vor Quantität</p>
+            </div>
+            <button class="btn-edit-mode" id="sunday-edit-btn" onclick="toggleEdit('sunday')">✏️ BEARBEITEN</button>
+        </div>
+        <div class="edit-banner">✏️ Bearbeitungsmodus – Texte direkt anklicken und ändern. Wird automatisch gespeichert.</div>
+
+        <div class="exercise-section">
+            <div class="section-title">Beintraining</div>
+            <div class="exercise-item">
+                <div class="checkbox-wrapper"><input type="checkbox" id="sun-ex1" onchange="updateProgress('sunday')"></div>
+                <div class="exercise-content">
+                    <input class="editable-field name-field" id="sun-name1" value="Beinpresse oder Hackenschmidt" oninput="saveText('sunday')">
+                    <input class="editable-field sets-field" id="sun-sets1" value="4× 6–10" oninput="saveText('sunday')">
+                </div>
+                <div class="weight-input-wrapper">
+                    <label>kg</label>
+                    <input type="number" placeholder="—" id="sun-weight1" oninput="saveWeights('sunday')">
+                </div>
+            </div>
+            <div class="exercise-item">
+                <div class="checkbox-wrapper"><input type="checkbox" id="sun-ex2" onchange="updateProgress('sunday')"></div>
+                <div class="exercise-content">
+                    <input class="editable-field name-field" id="sun-name2" value="Rumänisches Kreuzheben" oninput="saveText('sunday')">
+                    <input class="editable-field sets-field" id="sun-sets2" value="4× 8–10" oninput="saveText('sunday')">
+                </div>
+                <div class="weight-input-wrapper">
+                    <label>kg</label>
+                    <input type="number" placeholder="—" id="sun-weight2" oninput="saveWeights('sunday')">
+                </div>
+            </div>
+            <div class="exercise-item">
+                <div class="checkbox-wrapper"><input type="checkbox" id="sun-ex3" onchange="updateProgress('sunday')"></div>
+                <div class="exercise-content">
+                    <input class="editable-field name-field" id="sun-name3" value="Beinbeuger liegend" oninput="saveText('sunday')">
+                    <input class="editable-field sets-field" id="sun-sets3" value="3× 10–12" oninput="saveText('sunday')">
+                </div>
+                <div class="weight-input-wrapper">
+                    <label>kg</label>
+                    <input type="number" placeholder="—" id="sun-weight3" oninput="saveWeights('sunday')">
+                </div>
+            </div>
+            <div class="exercise-item">
+                <div class="checkbox-wrapper"><input type="checkbox" id="sun-ex4" onchange="updateProgress('sunday')"></div>
+                <div class="exercise-content">
+                    <input class="editable-field name-field" id="sun-name4" value="Beinstrecker" oninput="saveText('sunday')">
+                    <input class="editable-field sets-field" id="sun-sets4" value="3× 12–15" oninput="saveText('sunday')">
+                </div>
+                <div class="weight-input-wrapper">
+                    <label>kg</label>
+                    <input type="number" placeholder="—" id="sun-weight4" oninput="saveWeights('sunday')">
+                </div>
+            </div>
+            <div class="exercise-item">
+                <div class="checkbox-wrapper"><input type="checkbox" id="sun-ex5" onchange="updateProgress('sunday')"></div>
+                <div class="exercise-content">
+                    <input class="editable-field name-field" id="sun-name5" value="Waden stehend oder sitzend" oninput="saveText('sunday')">
+                    <input class="editable-field sets-field" id="sun-sets5" value="4× 10–15" oninput="saveText('sunday')">
+                </div>
+                <div class="weight-input-wrapper">
+                    <label>kg</label>
+                    <input type="number" placeholder="—" id="sun-weight5" oninput="saveWeights('sunday')">
+                </div>
+            </div>
+        </div>
+
+        <div class="hint-box"><strong>➡ Hinweis:</strong> Kein Supersatz, lange Pausen, Fokus auf Progression</div>
+        <div class="progress-bar"><div class="progress-fill" id="sunday-progress" style="width:0%"></div></div>
+        <div class="action-buttons">
+            <button class="btn btn-primary" onclick="finishTraining('sunday')"><span>TRAINING FERTIG</span></button>
+            <button class="btn btn-secondary" onclick="showMenu()"><span>ZURÜCK</span></button>
+        </div>
+    </div>
+
+</div><!-- /container -->
+
+<script>
+// ─────────────────────────────────────────────
+//  Config
+// ─────────────────────────────────────────────
+const DAY_COUNTS = {
+    monday:   5,
+    tuesday:  5,
+    thursday: 5,
+    friday:   6,
+    sunday:   5
+};
+
+const PREFIX = {
+    monday:   'mon',
+    tuesday:  'tue',
+    thursday: 'thu',
+    friday:   'fri',
+    sunday:   'sun'
+};
+
+// ─────────────────────────────────────────────
+//  Navigation
+// ─────────────────────────────────────────────
+function showMenu() {
+    document.body.classList.remove('edit-mode');
+    document.querySelectorAll('.btn-edit-mode').forEach(b => {
+        b.textContent = '✏️ BEARBEITEN';
+        b.classList.remove('active');
+    });
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    document.getElementById('menu-page').classList.add('active');
+}
+
+function showDay(day) {
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    document.getElementById(day + '-page').classList.add('active');
+    loadWeights(day);
+    loadText(day);
+    updateProgress(day);
+}
+
+// ─────────────────────────────────────────────
+//  Edit mode toggle
+// ─────────────────────────────────────────────
+function toggleEdit(day) {
+    const isEdit = document.body.classList.toggle('edit-mode');
+    const btn = document.getElementById(day + '-edit-btn');
+    if (isEdit) {
+        btn.textContent = '✅ FERTIG';
+        btn.classList.add('active');
+    } else {
+        btn.textContent = '✏️ BEARBEITEN';
+        btn.classList.remove('active');
+        saveText(day);
+    }
+}
+
+// ─────────────────────────────────────────────
+//  Progress bar
+// ─────────────────────────────────────────────
+function updateProgress(day) {
+    const checkboxes = document.querySelectorAll(`#${day}-page input[type="checkbox"]`);
+    const total   = checkboxes.length;
+    const checked = Array.from(checkboxes).filter(cb => cb.checked).length;
+    const bar = document.getElementById(day + '-progress');
+    if (bar) bar.style.width = (checked / total * 100) + '%';
+    checkboxes.forEach(cb => {
+        cb.closest('.exercise-item').classList.toggle('completed', cb.checked);
+    });
+}
+
+// ─────────────────────────────────────────────
+//  Weights  →  localStorage (persist forever)
+// ─────────────────────────────────────────────
+function saveWeights(day) {
+    const p = PREFIX[day];
+    const n = DAY_COUNTS[day];
+    const obj = {};
+    for (let i = 1; i <= n; i++) {
+        const el = document.getElementById(`${p}-weight${i}`);
+        if (el) obj[i] = el.value;
+    }
+    localStorage.setItem(`weights_${day}`, JSON.stringify(obj));
+}
+
+function loadWeights(day) {
+    const raw = localStorage.getItem(`weights_${day}`);
+    if (!raw) return;
+    const obj = JSON.parse(raw);
+    const p = PREFIX[day];
+    Object.entries(obj).forEach(([i, val]) => {
+        const el = document.getElementById(`${p}-weight${i}`);
+        if (el) el.value = val;
+    });
+}
+
+// ─────────────────────────────────────────────
+//  Exercise texts  →  localStorage
+// ─────────────────────────────────────────────
+function saveText(day) {
+    const p = PREFIX[day];
+    const n = DAY_COUNTS[day];
+    const obj = {};
+    for (let i = 1; i <= n; i++) {
+        const nameEl = document.getElementById(`${p}-name${i}`);
+        const setsEl = document.getElementById(`${p}-sets${i}`);
+        if (nameEl) obj[`name${i}`] = nameEl.value;
+        if (setsEl) obj[`sets${i}`] = setsEl.value;
+    }
+    localStorage.setItem(`text_${day}`, JSON.stringify(obj));
+}
+
+function loadText(day) {
+    const raw = localStorage.getItem(`text_${day}`);
+    if (!raw) return;
+    const obj = JSON.parse(raw);
+    const p = PREFIX[day];
+    Object.entries(obj).forEach(([key, val]) => {
+        const el = document.getElementById(`${p}-${key}`);
+        if (el) el.value = val;
+    });
+}
+
+// ─────────────────────────────────────────────
+//  Finish training  –  reset checkboxes only
+// ─────────────────────────────────────────────
+function finishTraining(day) {
+    if (!confirm('Training abgeschlossen! Alle Haken zurücksetzen?')) return;
+
+    // Exit edit mode
+    document.body.classList.remove('edit-mode');
+    const editBtn = document.getElementById(day + '-edit-btn');
+    if (editBtn) { editBtn.textContent = '✏️ BEARBEITEN'; editBtn.classList.remove('active'); }
+
+    // Reset checkboxes only – weights stay in localStorage
+    document.querySelectorAll(`#${day}-page input[type="checkbox"]`).forEach(cb => {
+        cb.checked = false;
+        cb.closest('.exercise-item').classList.remove('completed');
+    });
+
+    const bar = document.getElementById(day + '-progress');
+    if (bar) bar.style.width = '0%';
+
+    setTimeout(showMenu, 400);
+}
+
+// ─────────────────────────────────────────────
+//  Init on load
+// ─────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', () => {
+    Object.keys(DAY_COUNTS).forEach(day => updateProgress(day));
+});
+</script>
+</body>
+</html>
